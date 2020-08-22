@@ -1,11 +1,14 @@
+mod gh;
+
 #[derive(structopt::StructOpt)]
 struct Args {
-    #[structopt(short = "t", long = "token")]
+    #[structopt(short, long)]
+    username: String,
+    #[structopt(short, long)]
     token: String,
 }
 
 #[paw::main]
 fn main(args: Args) {
-    let token = args.token;
-    println!("{}", &token);
+    gh::get_repos_list(&args.username, &args.token);
 }
