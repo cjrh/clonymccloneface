@@ -7,3 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+github-rs = "0.7.0"
+structopt = { version = "0.3.16", features = [ "paw" ] }
+paw = "1.0.0"
+
+[profile.release]
+# https://github.com/johnthagen/min-sized-rust
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+opt-level = 'z'
