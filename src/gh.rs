@@ -133,10 +133,7 @@ fn get_repos_page(
     page: u32,
     per_page: usize,
 ) -> Option<Vec<Value>> {
-    let repos_endpoint = format!(
-        "users/{}/repos?type=all&per_page={}&page={}",
-        username, per_page, page
-    );
+    let repos_endpoint = format!("user/repos?type=all&per_page={}&page={}", per_page, page);
     let response = client
         .get()
         .custom_endpoint(&repos_endpoint)
