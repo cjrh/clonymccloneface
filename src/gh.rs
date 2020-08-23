@@ -15,7 +15,7 @@ pub fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) {
         None => std::env::current_dir().unwrap(),
     };
 
-    while let Some(h) = get_repos_page(&client, &username, page, per_page) {
+    while let Some(h) = get_repos_page(&client, page, per_page) {
         // println!("Got {} repos", &h.len());
         for data in &h {
             // println!("{}", serde_json::to_string_pretty(&h).unwrap());
@@ -23,20 +23,18 @@ pub fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) {
             let ssh_url = data["ssh_url"].as_str().unwrap();
             let fork: bool = data["fork"].as_bool().unwrap();
             let parent_ssh_url = get_fork_parent(&client, &username, &repo_name, &fork);
-            clone_repo(&repo_name, &ssh_url, &fork, &write_path, parent_ssh_url);
+            clone_repo(&repo_name, &ssh_url, &write_path, parent_ssh_url);
         }
         if h.len() < per_page {
             break;
         }
         page += 1;
     }
-    // println!("Done.");
 }
 
 fn clone_repo(
     repo_name: &str,
     ssh_url: &str,
-    fork: &bool,
     write_path: &PathBuf,
     parent_ssh_url: Option<String>,
 ) {
@@ -127,12 +125,7 @@ fn get_fork_parent(
     }
 }
 
-fn get_repos_page(
-    client: &Github,
-    username: &str,
-    page: u32,
-    per_page: usize,
-) -> Option<Vec<Value>> {
+fn get_repos_page(client: &Github, page: u32, per_page: usize) -> Option<Vec<Value>> {
     let repos_endpoint = format!("user/repos?type=all&per_page={}&page={}", per_page, page);
     let response = client
         .get()
