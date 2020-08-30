@@ -20,8 +20,13 @@ pub fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) {
         for data in &h {
             // println!("{}", serde_json::to_string_pretty(&h).unwrap());
             let repo_name = data["name"].as_str().unwrap();
+            if already_cloned(&repo_name, &write_path) {
+                println!("√ Target clone exists, skipping: {:?}", &repo_name);
+                continue;
+            }
             let ssh_url = data["ssh_url"].as_str().unwrap();
             let fork: bool = data["fork"].as_bool().unwrap();
+
             let parent_ssh_url = get_fork_parent(&client, &username, &repo_name, &fork);
             clone_repo(&repo_name, &ssh_url, &write_path, parent_ssh_url);
         }
@@ -32,18 +37,18 @@ pub fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) {
     }
 }
 
+fn already_cloned(repo_name: &str, write_path: &PathBuf) -> bool {
+    let target_repo_folder = write_path.join(repo_name);
+    target_repo_folder.exists()
+}
+
 fn clone_repo(
     repo_name: &str,
     ssh_url: &str,
     write_path: &PathBuf,
     parent_ssh_url: Option<String>,
 ) {
-    // println!("repo: {} fork? {} ssh_url: {}", &repo_name, &fork, &ssh_url);
     let target_repo_folder = write_path.join(repo_name);
-    if target_repo_folder.exists() {
-        println!("👍 Target clone exists, skipping: {:?}", &repo_name);
-        return;
-    };
     let msg = format!("Cloning {}...", &repo_name);
     let sp = Spinner::new(Spinners::Dots9, msg);
     let result = Exec::cmd("git")
