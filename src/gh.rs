@@ -1,43 +1,69 @@
-use github_rs::client::{Executor, Github};
-use serde_json::Value;
+use anyhow::Result;
+use octocrab::Octocrab;
 use spinners::{Spinner, Spinners};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use subprocess::{Exec, Redirection};
 use yansi::Paint;
 
-pub fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) {
-    let client = Github::new(token).unwrap();
-    let per_page: usize = 100;
+pub async fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) -> Result<()> {
+    let o = Octocrab::builder()
+        .personal_token(token.to_string())
+        .build()?;
+
+    let o2 = o.clone();
+
+    // Repos list
+    let mut repos = vec![];
+    let mut finished = false;
     let mut page = 1;
+    while !finished {
+        let page_repos = o2
+            .current()
+            .list_repos_for_authenticated_user()
+            .type_("all")
+            .page(page)
+            .per_page(10)
+            .send()
+            .await?
+            .into_iter()
+            .collect::<Vec<_>>();
+
+        if !page_repos.is_empty() {
+            repos.extend(page_repos);
+            page += 1;
+        } else {
+            finished = true;
+        }
+    }
 
     let write_path = match path {
         Some(p) => std::fs::canonicalize(p).unwrap(),
         None => std::env::current_dir().unwrap(),
     };
 
-    while let Some(h) = get_repos_page(&client, page, per_page) {
-        // println!("Got {} repos", &h.len());
-        for data in &h {
-            // println!("{}", serde_json::to_string_pretty(&h).unwrap());
-            let repo_name = data["name"].as_str().unwrap();
-            if already_cloned(&repo_name, &write_path) {
-                println!("√ Target clone exists, skipping: {:?}", &repo_name);
-                continue;
+    for r in repos {
+        let reponame = r.name.clone();
+        let x = match o.repos(username, &reponame).get().await {
+            Ok(x) => x,
+            Err(_) => {
+                println!("Error fetching {reponame}");
+                continue
             }
-            let ssh_url = data["ssh_url"].as_str().unwrap();
-            let fork: bool = data["fork"].as_bool().unwrap();
-
-            let parent_ssh_url = get_fork_parent(&client, &username, &repo_name, &fork);
-            clone_repo(&repo_name, &ssh_url, &write_path, parent_ssh_url);
+        };
+        let repo_name = &r.name;
+        if already_cloned(repo_name, &write_path) {
+            println!("✔️  Target clone exists, skipping: {:?}", &repo_name);
+            continue;
         }
-        if h.len() < per_page {
-            break;
-        }
-        page += 1;
+        let ssh_url = x.ssh_url.as_ref().unwrap();
+        let parent_ssh_url = x.parent.as_ref().and_then(|p| p.ssh_url.clone());
+        clone_repo(repo_name, ssh_url, &write_path, parent_ssh_url);
     }
+
+    Ok(())
 }
 
-fn already_cloned(repo_name: &str, write_path: &PathBuf) -> bool {
+fn already_cloned(repo_name: &str, write_path: &Path) -> bool {
     let target_repo_folder = write_path.join(repo_name);
     target_repo_folder.exists()
 }
@@ -97,55 +123,5 @@ fn clone_repo(
         Err(e) => {
             eprintln!("\r❌ Failed to set upstream: {}", e);
         }
-    }
-}
-
-fn get_fork_parent(
-    client: &Github,
-    username: &str,
-    repo_name: &str,
-    fork: &bool,
-) -> Option<String> {
-    if !fork {
-        return None;
-    }
-
-    let repo_endpoint = format!("repos/{}/{}", &username, &repo_name);
-    let response = client
-        .get()
-        .custom_endpoint(&repo_endpoint)
-        .execute::<Value>();
-
-    match response {
-        Ok((_headers, _status, json)) => {
-            if let Some(json) = json {
-                let parent = &json["parent"];
-                let s = parent["ssh_url"].as_str().unwrap().to_owned();
-                Some(s)
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
-    }
-}
-
-fn get_repos_page(client: &Github, page: u32, per_page: usize) -> Option<Vec<Value>> {
-    let repos_endpoint = format!("user/repos?type=all&per_page={}&page={}", per_page, page);
-    let response = client
-        .get()
-        .custom_endpoint(&repos_endpoint)
-        .execute::<Value>();
-
-    match response {
-        Ok((_headers, _status, json)) => {
-            // println!("{:#?}", &headers);
-            if let Some(json) = json {
-                json.as_array().cloned()
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
     }
 }

@@ -15,6 +15,12 @@ struct Args {
 }
 
 #[paw::main]
-fn main(args: Args) {
-    gh::get_repos_list(&args.username, &args.token, &args.path);
+fn main(args: Args) -> Result<(), Box<dyn std::error::Error>> {
+    let rt = tokio::runtime::Runtime::new()?;
+    rt.block_on( async move {
+        gh::get_repos_list(&args.username, &args.token, &args.path)
+            .await
+            .expect("Problem running.")
+    });
+    Ok(())
 }
