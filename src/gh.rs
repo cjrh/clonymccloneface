@@ -50,7 +50,7 @@ fn clone_repo(
 ) {
     let target_repo_folder = write_path.join(repo_name);
     let msg = format!("Cloning {}...", &repo_name);
-    let sp = Spinner::new(Spinners::Dots9, msg);
+    let mut sp = Spinner::new(Spinners::Dots9, msg);
     let result = Exec::cmd("git")
         .arg("clone")
         .arg(&ssh_url)
