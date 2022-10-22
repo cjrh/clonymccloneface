@@ -47,7 +47,7 @@ pub async fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>)
             Ok(x) => x,
             Err(_) => {
                 println!("Error fetching {reponame}");
-                continue
+                continue;
             }
         };
         let repo_name = &r.name;
