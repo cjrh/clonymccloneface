@@ -13,7 +13,7 @@ spinners = "4.1.0"
 yansi = "0.5.1"
 octocrab = { version = "0.19.0", features = ["rustls"] }
 anyhow = "1.0.70"
-tokio = { version = "1.25.0", features = ["full"] }
+tokio = { version = "1.26.0", features = ["full"] }
 
 [profile.release]
 # https://github.com/johnthagen/min-sized-rust
