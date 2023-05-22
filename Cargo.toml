@@ -11,7 +11,7 @@ paw = "1.0.0"
 subprocess = "0.2.9"
 spinners = "4.1.0"
 yansi = "0.5.1"
-octocrab = { version = "0.19.0", features = ["rustls"] }
+octocrab = { version = "0.23.0", features = ["rustls"] }
 anyhow = "1.0.70"
 tokio = { version = "1.27.0", features = ["full"] }
 
