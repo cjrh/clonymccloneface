@@ -5,7 +5,8 @@ use std::path::{Path, PathBuf};
 use subprocess::{Exec, Redirection};
 use yansi::Paint;
 
-pub async fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>) -> Result<()> {
+pub async fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>,
+    include_repos: Option<String>) -> Result<()> {
     let o = Octocrab::builder()
         .personal_token(token.to_string())
         .build()?;
@@ -41,8 +42,22 @@ pub async fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>)
         None => std::env::current_dir().unwrap(),
     };
 
+    use std::collections::HashSet;
+    // Incline repos comes in as an optional comma-separated string.
+    // We convert it here to a HashSet for faster lookups. If the option
+    // was None, the HashSet will be empty.
+    let inclue_repos: HashSet<String> = include_repos
+        .unwrap_or_default()
+        .split(',')
+        .map(|s| s.to_string())
+        .collect();
+    println!("🔍 These repos should be included: {:?}", &inclue_repos);
     for r in repos {
         let reponame = r.name.clone();
+        println!("🔄 Fetching: {:?}", &reponame);
+        if !inclue_repos.is_empty() && !inclue_repos.contains(&reponame) {
+            continue;
+        }
         let x = match o.repos(username, &reponame).get().await {
             Ok(x) => x,
             Err(_) => {
