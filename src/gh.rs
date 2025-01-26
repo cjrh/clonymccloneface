@@ -94,9 +94,9 @@ fn clone_repo(
     let mut sp = Spinner::new(Spinners::Dots9, msg);
     let result = Exec::cmd("git")
         .arg("clone")
-        .arg(&ssh_url)
+        .arg(ssh_url)
         .arg(&target_repo_folder)
-        .cwd(&write_path)
+        .cwd(write_path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)
         .capture();
@@ -106,7 +106,7 @@ fn clone_repo(
 
     match result {
         Ok(cd) => {
-            let s = Paint::green(format!("✅ Cloned {}", &repo_name));
+            let s = format!("✅ Cloned {}", &repo_name.green());
             print!("{}", s);
             let _output = cd.stdout_str();
             // TODO: if verbose is supplied, print verbose
