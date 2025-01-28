@@ -46,16 +46,17 @@ pub async fn get_repos_list(username: &str, token: &str, path: &Option<PathBuf>,
     // Incline repos comes in as an optional comma-separated string.
     // We convert it here to a HashSet for faster lookups. If the option
     // was None, the HashSet will be empty.
-    let inclue_repos: HashSet<String> = include_repos
+    let include_repos: HashSet<String> = include_repos
         .unwrap_or_default()
         .split(',')
         .map(|s| s.to_string())
+        .filter(|s| !s.is_empty())
         .collect();
-    println!("🔍 These repos should be included: {:?}", &inclue_repos);
+    println!("🔍 These repos should be included: {:?}", &include_repos);
     for r in repos {
         let reponame = r.name.clone();
         println!("🔄 Fetching: {:?}", &reponame);
-        if !inclue_repos.is_empty() && !inclue_repos.contains(&reponame) {
+        if !include_repos.is_empty() && !include_repos.contains(&reponame) {
             continue;
         }
         let x = match o.repos(username, &reponame).get().await {
