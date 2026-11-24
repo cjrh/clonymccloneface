@@ -9,7 +9,7 @@ serde_json = "1.0"
 structopt = { version = "0.3.26", features = ["paw"] }
 paw = "1.0.0"
 subprocess = "1.1.0"
-spinners = "4.2.0"
+spinners = "5.0.0"
 yansi = "1.0.1"
 octocrab = { version = "0.54.0", features = ["rustls"] }
 anyhow = "1.0.102"
